@@ -1,0 +1,1 @@
+# WinTelemetryService.exe
