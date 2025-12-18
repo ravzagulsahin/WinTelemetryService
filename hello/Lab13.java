@@ -3,16 +3,17 @@ import java.util.*;
 public class Lab13 {
 
     public static void main(String[] args) {
-        Graph<String> graph = new Graph<>();
-        graph.addEdge("A", "B", 1);
-        graph.addEdge("A", "C", 4);
-        graph.addEdge("B", "C", 2);
-        graph.addEdge("C", "D", 1);
+        Graph<String> g = new Graph<>();
 
-        System.out.println(graph.greedyWalk("A", "D"));
-        System.out.println(graph.dijkstra("A", "D"));
+        g.addEdge("A", "B", 1);
+        g.addEdge("A", "C", 4);
+        g.addEdge("B", "C", 2);
+        g.addEdge("C", "D", 1);
 
-        Graph<String> mst = graph.mstPrims("A");
+        System.out.println(g.greedyWalk("A", "D"));
+        System.out.println(g.dijkstra("A", "D"));
+
+        Graph<String> mst = g.mstPrims("A");
         mst.printEdges();
     }
 }
@@ -36,12 +37,12 @@ class Node<T> implements Comparable<Node<T>> {
 
     public Node(T data) {
         this.data = data;
-        this.edges = new ArrayList<>();
+        edges = new ArrayList<>();
         gCost = Integer.MAX_VALUE;
     }
 
     public void addNeighbor(Node<T> target, int weight) {
-        this.edges.add(new Edge<>(target, weight));
+        edges.add(new Edge<>(target, weight));
     }
 
     @Override
@@ -59,7 +60,7 @@ class Graph<T> {
     private Map<T, Node<T>> nodes;
 
     public Graph() {
-        this.nodes = new HashMap<>();
+        nodes = new HashMap<>();
     }
 
     // Adds a node if it doesn't exist
@@ -83,16 +84,22 @@ class Graph<T> {
 
     // Prints edges for debugging MST
     public void printEdges() {
-        for (T key : nodes.keySet()) {
-            Node<T> n = nodes.get(key);
-            for (Edge<T> e : n.edges) {
-                if (n.data.hashCode() < e.target.data.hashCode())
+        Object[] keys = nodes.keySet().toArray();
+
+        for (int i = 0; i < keys.length; i++) {
+            Node<T> n = nodes.get(keys[i]);
+
+            for (int j = 0; j < n.edges.size(); j++) {
+                Edge<T> e = n.edges.get(j);
+
+                if (n.data.hashCode() < e.target.data.hashCode()) {
                     System.out.println(n.data + " - " + e.target.data + " : " + e.weight);
+                }
             }
         }
     }
 
-    // Task: Implement a greedy search.
+    // Task: Implement a greedy search. 
     // Always pick the cheapest *immediate* neighbor.
     // Handles dead ends by stopping.
     public List<T> greedyWalk(T startData, T endData) {
@@ -104,17 +111,20 @@ class Graph<T> {
         // 4. Move to that neighbor (set parent, add to queue)
         // 5. If found end, return reconstructPath(current)
 
+        Queue<Node<T>> queue = new LinkedList<>();
+        Set<Node<T>> visited = new HashSet<>();
+
         Node<T> start = nodes.get(startData);
         Node<T> end = nodes.get(endData);
 
         if (start == null || end == null)
             return null;
 
-        Set<Node<T>> visited = new HashSet<>();
-        Node<T> current = start;
-        current.parent = null;
+        start.parent = null;
+        queue.add(start);
 
-        while (current != null) {
+        while (!queue.isEmpty()) {
+            Node<T> current = queue.poll();
             visited.add(current);
 
             if (current == end) {
@@ -137,7 +147,7 @@ class Graph<T> {
                 break;
 
             cheapest.target.parent = current;
-            current = cheapest.target;
+            queue.add(cheapest.target);
         }
 
         return null;
@@ -147,24 +157,15 @@ class Graph<T> {
     // Use a PriorityQueue to explore the globally cheapest path
     public List<T> dijkstra(T startData, T endData) {
 
-        // TODO: Implement Dijkstra
-        // 1. Set start.gCost = 0
-        // 2. Add start to PriorityQueue
-        // 3. While PQ not empty:
-        // a. Poll current node
-        // b. If visited, continue. Else mark visited.
-        // c. Check if current == end
-        // d. Relax neighbors: if (newDist < neighbor.gCost) -> update & add to PQ
-
         Node<T> start = nodes.get(startData);
         Node<T> end = nodes.get(endData);
 
         if (start == null || end == null)
             return null;
 
-        Iterator<Node<T>> it = nodes.values().iterator();
-        while (it.hasNext()) {
-            Node<T> n = it.next();
+        Object[] keys = nodes.keySet().toArray();
+        for (int i = 0; i < keys.length; i++) {
+            Node<T> n = nodes.get(keys[i]);
             n.gCost = Integer.MAX_VALUE;
             n.parent = null;
         }
@@ -181,6 +182,7 @@ class Graph<T> {
 
             if (visited.contains(current))
                 continue;
+
             visited.add(current);
 
             if (current == end) {
@@ -207,21 +209,15 @@ class Graph<T> {
     // Task: Return a NEW Graph representing the Minimum Spanning Tree.
     public Graph<T> mstPrims(T startData) {
 
-        // TODO: Implement Prim's
-        // 1. Similar to Dijkstra, but compare Edge Weights, not Total Path Cost.
-        // 2. When you extract a node (u) from PQ:
-        // a. Add the edge (u.parent -> u) to the 'mst' graph.
-        // b. Scan neighbors. If edge.weight < neighbor.gCost, update & add to PQ.
-
         Node<T> start = nodes.get(startData);
         if (start == null)
             return null;
 
         Graph<T> mst = new Graph<>();
 
-        Iterator<Node<T>> it = nodes.values().iterator();
-        while (it.hasNext()) {
-            Node<T> n = it.next();
+        Object[] keys = nodes.keySet().toArray();
+        for (int i = 0; i < keys.length; i++) {
+            Node<T> n = nodes.get(keys[i]);
             n.gCost = Integer.MAX_VALUE;
             n.parent = null;
         }
@@ -238,8 +234,8 @@ class Graph<T> {
 
             if (visited.contains(current))
                 continue;
-            visited.add(current);
 
+            visited.add(current);
             mst.addNode(current.data);
 
             if (current.parent != null) {
@@ -265,10 +261,12 @@ class Graph<T> {
     private List<T> reconstructPath(Node<T> end) {
         List<T> list = new ArrayList<>();
         Node<T> current = end;
+
         while (current != null) {
             list.add(current.data);
             current = current.parent;
         }
+
         Collections.reverse(list);
         return list;
     }
